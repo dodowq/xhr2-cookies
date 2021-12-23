@@ -73,6 +73,7 @@ export class XMLHttpRequest extends XMLHttpRequestEventTarget {
 	private _loadedBytes = 0;
 	private _totalBytes = 0;
 	private _lengthComputable = false;
+	private _disableHeaderCheck = false;
 	
 	private _restrictedMethods = {CONNECT: true, TRACE: true, TRACK: true};
 	private _restrictedHeaders = {
@@ -133,14 +134,20 @@ export class XMLHttpRequest extends XMLHttpRequestEventTarget {
 		this._totalBytes = 0;
 		this._lengthComputable = false;
 	}
+
+	setDisableHeaderCheck(state: boolean) {
+		this._disableHeaderCheck = state;
+	}
 	
 	setRequestHeader(name: string, value: any) {
 		if (this.readyState !== XMLHttpRequest.OPENED) { throw new XMLHttpRequest.InvalidStateError('XHR readyState must be OPENED'); }
 		
 		const loweredName = name.toLowerCase();
-		if (this._restrictedHeaders[loweredName] || /^sec-/.test(loweredName) || /^proxy-/.test(loweredName)) {
-			console.warn(`Refused to set unsafe header "${name}"`);
-			return;
+		if (!this._disableHeaderCheck) {
+			if (this._restrictedHeaders[loweredName] || /^sec-/.test(loweredName) || /^proxy-/.test(loweredName)) {
+				console.warn(`Refused to set unsafe header "${name}"`);
+				return;
+			}
 		}
 		
 		value = value.toString();
